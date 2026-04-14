@@ -14,16 +14,164 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sightings: {
+        Row: {
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          notes: string | null
+          photo_url: string | null
+          reviewed_by: string | null
+          species_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          notes?: string | null
+          photo_url?: string | null
+          reviewed_by?: string | null
+          species_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          notes?: string | null
+          photo_url?: string | null
+          reviewed_by?: string | null
+          species_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sightings_species_id_fkey"
+            columns: ["species_id"]
+            isOneToOne: false
+            referencedRelation: "species"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      species: {
+        Row: {
+          altitude_range: string | null
+          category: string
+          common_name: string
+          conservation_status: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          habitat: string | null
+          id: string
+          image_url: string | null
+          scientific_name: string
+          updated_at: string
+        }
+        Insert: {
+          altitude_range?: string | null
+          category?: string
+          common_name: string
+          conservation_status?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          habitat?: string | null
+          id?: string
+          image_url?: string | null
+          scientific_name: string
+          updated_at?: string
+        }
+        Update: {
+          altitude_range?: string | null
+          category?: string
+          common_name?: string
+          conservation_status?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          habitat?: string | null
+          id?: string
+          image_url?: string | null
+          scientific_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "researcher" | "public"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +298,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "researcher", "public"],
+    },
   },
 } as const
