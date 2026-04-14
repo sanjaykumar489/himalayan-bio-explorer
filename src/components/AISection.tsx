@@ -1,16 +1,25 @@
 import { useState, useCallback } from "react";
-import { Brain, Upload, Camera, Sparkles, AlertTriangle } from "lucide-react";
+import { Brain, Upload, Camera, Sparkles, AlertTriangle, MessageSquare } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
-const mockResults = [
-  { name: "Himalayan Monal", confidence: 94, scientific: "Lophophorus impejanus" },
-  { name: "Satyr Tragopan", confidence: 4, scientific: "Tragopan satyra" },
-  { name: "Blood Pheasant", confidence: 2, scientific: "Ithaginis cruentus" },
-];
+interface AIResult {
+  name: string;
+  confidence: number;
+  scientific: string;
+  description?: string;
+  habitat?: string;
+  conservation_status?: string;
+}
 
 const AISection = () => {
   const [preview, setPreview] = useState<string | null>(null);
-  const [results, setResults] = useState<typeof mockResults | null>(null);
+  const [results, setResults] = useState<AIResult[] | null>(null);
+  const [summary, setSummary] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -20,17 +29,33 @@ const AISection = () => {
     }
   }, []);
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreview(e.target?.result as string);
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string;
+      setPreview(base64);
       setResults(null);
+      setSummary("");
       setLoading(true);
-      // Simulate AI processing
-      setTimeout(() => {
-        setResults(mockResults);
+
+      try {
+        const { data, error } = await supabase.functions.invoke("ai-species-identify", {
+          body: { imageBase64: base64 },
+        });
+
+        if (error) throw error;
+        if (data?.results) {
+          setResults(data.results);
+          setSummary(data.summary || "");
+        } else {
+          throw new Error("No results returned");
+        }
+      } catch (err: any) {
+        console.error("AI identification error:", err);
+        toast({ title: "AI Error", description: err.message || "Failed to identify species", variant: "destructive" });
+      } finally {
         setLoading(false);
-      }, 2000);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -95,7 +120,7 @@ const AISection = () => {
             {loading && (
               <div className="text-center py-12">
                 <div className="h-12 w-12 border-4 border-secondary/30 border-t-secondary rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-secondary/70">Analyzing image...</p>
+                <p className="text-secondary/70">Analyzing with AI...</p>
               </div>
             )}
 
@@ -116,7 +141,15 @@ const AISection = () => {
                         {r.confidence}%
                       </span>
                     </div>
-                    <p className="text-xs italic text-secondary/40 mb-2">{r.scientific}</p>
+                    <p className="text-xs italic text-secondary/40 mb-1">{r.scientific}</p>
+                    {i === 0 && r.description && (
+                      <p className="text-xs text-secondary/60 mb-1">{r.description}</p>
+                    )}
+                    {i === 0 && r.conservation_status && (
+                      <span className="inline-block text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full mb-2">
+                        {r.conservation_status}
+                      </span>
+                    )}
                     <div className="w-full h-1.5 bg-secondary/10 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full bg-secondary transition-all duration-1000"
@@ -126,12 +159,20 @@ const AISection = () => {
                   </div>
                 ))}
 
-                <div className="flex items-start gap-2 mt-4 p-3 rounded-lg bg-accent/10 border border-accent/20">
-                  <AlertTriangle className="h-4 w-4 text-accent mt-0.5" />
-                  <p className="text-xs text-accent/80">
-                    Demo mode — AI identification requires Lovable Cloud integration for live predictions.
-                  </p>
-                </div>
+                {summary && (
+                  <div className="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                    <p className="text-xs text-secondary/70">{summary}</p>
+                  </div>
+                )}
+
+                {!user && (
+                  <div className="flex items-start gap-2 mt-4 p-3 rounded-lg bg-accent/10 border border-accent/20">
+                    <AlertTriangle className="h-4 w-4 text-accent mt-0.5" />
+                    <p className="text-xs text-accent/80">
+                      Sign in to save identification results and contribute to the species database.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
