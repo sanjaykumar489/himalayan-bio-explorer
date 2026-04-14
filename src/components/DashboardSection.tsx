@@ -1,5 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from "recharts";
-import { TrendingUp, AlertCircle, Shield, Activity } from "lucide-react";
+import { TrendingUp, AlertCircle, Shield, Activity, Lock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const speciesData = [
   { region: "Uttarakhand", mammals: 85, birds: 420, flora: 1200 },
@@ -35,6 +36,23 @@ const climateData = [
 ];
 
 const DashboardSection = () => {
+  const { role } = useAuth();
+  const canView = role === "admin" || role === "researcher";
+
+  if (!canView) {
+    return (
+      <section id="dashboard" className="py-24 bg-background">
+        <div className="container mx-auto px-6 text-center">
+          <Lock className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+          <h2 className="text-2xl font-serif font-bold text-foreground mb-2">Dashboard Access Restricted</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Sign in as an <strong>Admin</strong> or <strong>Researcher</strong> to access the Decision Support Dashboard with analytics and insights.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="dashboard" className="py-24 bg-background">
       <div className="container mx-auto px-6">
